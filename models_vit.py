@@ -20,9 +20,10 @@ import timm.models.vision_transformer
 class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
     """ Vision Transformer with support for global average pooling
     """
-    def __init__(self, global_pool=False, **kwargs):
+    def __init__(self, apply_pool=True, global_pool=False, **kwargs):
         super(VisionTransformer, self).__init__(**kwargs)
 
+        self.apply_pool = apply_pool
         self.global_pool = global_pool
         if self.global_pool:
             norm_layer = kwargs['norm_layer']
@@ -35,22 +36,25 @@ class VisionTransformer(timm.models.vision_transformer.VisionTransformer):
         B = x.shape[0]
         x = self.patch_embed(x)
 
+        # Positional embedding
         cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
         x = torch.cat((cls_tokens, x), dim=1)
         x = x + self.pos_embed
         x = self.pos_drop(x)
 
+        # Encoder layers
         for blk in self.blocks:
             x = blk(x)
 
-        if self.global_pool:
+        # Pooling
+        if not self.apply_pool:
+            return x
+        elif self.global_pool:
             x = x[:, 1:, :].mean(dim=1)  # global pool without cls token
-            outcome = self.fc_norm(x)
+            return self.fc_norm(x)
         else:
             x = self.norm(x)
-            outcome = x[:, 0]
-
-        return outcome
+            return x[:, 0]
 
 
 def vit_base_patch16(**kwargs):
