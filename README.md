@@ -1,3 +1,13 @@
+## Example Usage
+
+```python
+model = torch.hub.load("greeneggsandyaml/mae:main", "mae", "large")
+```
+
+
+---------
+
+
 ## Masked Autoencoders: A PyTorch Implementation
 
 <p align="center">
